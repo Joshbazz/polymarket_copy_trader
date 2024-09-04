@@ -1,14 +1,4 @@
-'''
-9/3/2024
-This will trade out of the specified json file and flip the bot_executed flag to True
- - this is working, it flips the flag as intended. Now, we need to run this in a loop.
- - We need to add logic that does not trade if we are already in position
-
-9/4/24
-Line 86: Added functionality to catch piling into a position we're already in
-    - I DONT KNOW if it works. Check this
-'''
-
+import os
 import json
 import time
 import nice_funcs as n
@@ -36,6 +26,10 @@ def kill_switch():
 
 # Function to process trades
 def process_trades(json_file_path, client, sleep_duration=60, too_long_ago_hours=24):
+    while not os.path.exists(json_file_path):
+        print(f"File {json_file_path} not found. Waiting for {sleep_duration} seconds...")
+        time.sleep(sleep_duration)
+
     # Load trades from JSON file
     with open(json_file_path, 'r') as file:
         trades = json.load(file)
@@ -65,7 +59,7 @@ def process_trades(json_file_path, client, sleep_duration=60, too_long_ago_hours
             my_balance = n.get_wallet_balance('0x90e9bF6c345B68eE9fd8D4ECFAddb7Ee4F14c8f4')
             trade_risk = 0.15
             risk_size = my_balance * trade_risk
-            print(f'Risk Size USD is: {risk_size}')
+            print(f'Risk Size USD is: {risk_size}') ## type -> float
             # Extract trade details
             price = client.get_last_trade_price(trade['asset'])
             price = float(price['price'])
@@ -77,28 +71,76 @@ def process_trades(json_file_path, client, sleep_duration=60, too_long_ago_hours
             asset = trade['asset']
 
             user_address='0x90e9bF6c345B68eE9fd8D4ECFAddb7Ee4F14c8f4'
-            active_positions = n.get_active_positions(n.fetch_user_positions(user_address, limit = 500))
+            active_positions = n.fetch_user_positions(user_address, limit = 500)
+            print(active_positions.empty)
+            # active_positions = n.get_active_positions(n.fetch_user_positions(user_address, limit = 500))
+
             try:
-                if price >= .90 or price <= 0.05:
-                    print('not enough movement range to validate position, passing on trade')
+                if price >= 0.90 or price <= 0.05:
+                    print('Not enough movement range to validate position, passing on trade')
                     # Update the trade status to prevent re-execution
                     trade['bot_executed'] = True
-                # NOTE: I dont know if this will work correctly, but i can fix it tomorrow
-                elif asset in active_positions:
-                    print('already in position, skipping trade') 
-                    # Update the trade status to prevent re-execution
-                    trade['bot_executed'] = True
+                    # Save the immediate update back to JSON file
+                    with open(json_file_path, 'w') as file:
+                        json.dump(trades, file, indent=4)
+                    # Move to the next trade by using 'continue' or exiting this iteration
+                    continue  # or continue if this is inside a loop
+
+                # Check if active_positions DataFrame is not empty and has the 'asset' column
+                elif not active_positions.empty and 'asset' in active_positions.columns:
+                    # Check if the asset is already in active positions
+                    if active_positions['asset'].eq(trade['asset']).any():
+                        print('Already in position, skipping trade')
+                        # Update the trade status to prevent re-execution
+                        trade['bot_executed'] = True
+                        # Save the immediate update back to JSON file
+                        with open(json_file_path, 'w') as file:
+                            json.dump(trades, file, indent=4)
+                    else:
+                        # Attempt to execute the trade
+                        create_order(client, price, size, side, asset)
+                        # Update the trade status to prevent re-execution
+                        trade['bot_executed'] = True
+                        # Save the immediate update back to JSON file
+                        with open(json_file_path, 'w') as file:
+                            json.dump(trades, file, indent=4)
+
                 else:
-                    # Attempt to execute the trade
+                    print('No active position, creating trade...')
                     create_order(client, price, size, side, asset)
-
-                    # Update the trade status to prevent re-execution
                     trade['bot_executed'] = True
 
-                # trades_updated = True
-                # Save the immediate update back to JSON file
-                with open(json_file_path, 'w') as file:
-                    json.dump(trades, file, indent=4)
+                    # Save the immediate update back to JSON file
+                    with open(json_file_path, 'w') as file:
+                        json.dump(trades, file, indent=4)
+
+
+            # try:
+            #     if price >= .90 or price <= 0.05:
+            #         print('not enough movement range to validate position, passing on trade')
+            #         # Update the trade status to prevent re-execution
+            #         trade['bot_executed'] = True
+                    
+            #     # NOTE: I dont know if this will work correctly, but i can fix it tomorrow
+            #     if not active_positions.empty and 'asset' in active_positions.columns:
+            #         if active_positions['asset'].eq(trade['asset']).any():
+            #             print('already in position, skipping trade') 
+            #             # Update the trade status to prevent re-execution
+            #             trade['bot_executed'] = True
+            #         else:
+            #             # Attempt to execute the trade
+            #             create_order(client, price, size, side, asset)
+
+            #             # Update the trade status to prevent re-execution
+            #             trade['bot_executed'] = True
+            #     else:
+            #         print('No active position, creating trade...')
+            #         create_order(client, price, size, side, asset)
+            #         trade['bot_executed'] = True
+            #     # trades_updated = True
+            #     # Save the immediate update back to JSON file
+            #     with open(json_file_path, 'w') as file:
+            #         json.dump(trades, file, indent=4)
 
             except PolyApiException as e:
                 
@@ -111,9 +153,14 @@ def process_trades(json_file_path, client, sleep_duration=60, too_long_ago_hours
                     # Continue to monitor trades without stopping the function
                     continue
                 
-                                # Check if the error message matches the minimum size requirement error
-                elif "lower than the minimum" in error_message:
+                # Check if the error message matches the minimum size requirement error
+                elif "lower than the minimum" in error_message: 
                     print("Current risk parameters do not allow you to make this trade.")
+                    trade['bot_executed'] = True
+
+                    # Save the immediate update back to JSON file
+                    with open(json_file_path, 'w') as file:
+                        json.dump(trades, file, indent=4)
                     # Continue to the next trade without executing
                     continue
 
@@ -132,10 +179,17 @@ def process_trades(json_file_path, client, sleep_duration=60, too_long_ago_hours
 
 ## This is working as intended. it will tail the trade. Now we need to stop adding to a position we already have open
 
+def run_trade_tailer():
+    json_file_path = '/Users/joshbazz/Desktop/Bootcamp/Capstone_Project/tail_trades.json'
+    client = n.create_clob_client('0x90e9bF6c345B68eE9fd8D4ECFAddb7Ee4F14c8f4')
+    # Run the process_trades function continuously in a loop
+    while True:
+        process_trades(json_file_path, client)
+        
 # Example usage
 if __name__ == "__main__":
     # Replace with the path to your JSON file
-    json_file_path = '/Users/joshbazz/Desktop/Bootcamp/Capstone_Project/tail_trades.json'
+    json_file_path = 'tail_trades.json'
     
     # my_balance = n.get_wallet_balance('0x90e9bF6c345B68eE9fd8D4ECFAddb7Ee4F14c8f4')
     # print(my_balance)
@@ -148,3 +202,5 @@ if __name__ == "__main__":
     # Run the process_trades function continuously in a loop
     while True:
         process_trades(json_file_path, client)
+
+

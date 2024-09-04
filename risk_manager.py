@@ -4,17 +4,18 @@ Where we will monitor active positions and submit orders when our risk params ar
 '''
 import time
 import nice_funcs as n
+from py_clob_client.exceptions import PolyApiException
 
 user_address = '0x90e9bF6c345B68eE9fd8D4ECFAddb7Ee4F14c8f4'
-client = n.create_clob_client('0x90e9bF6c345B68eE9fd8D4ECFAddb7Ee4F14c8f4')
-# 1. Get Active Positions
-active_positions = n.get_active_positions(n.fetch_user_positions(user_address))
+# client = n.create_clob_client('0x90e9bF6c345B68eE9fd8D4ECFAddb7Ee4F14c8f4')
+# # 1. Get Active Positions
+# active_positions = n.get_active_positions(n.fetch_user_positions(user_address))
 # print(active_positions.iloc[0][['asset', 'title', 'percentPnl']])
 # print(active_positions.columns)
 
 # 2. Set Take Profit and Stop Loss Parameters
-take_profit = 20
-stop_loss = -4
+take_profit = 10
+stop_loss = -7
 
 # 3. Loop through active positions and check whether your parameters have been hit
     # if they have, create an order
@@ -23,39 +24,66 @@ stop_loss = -4
 def risk_management_looper(user_address: str):
 
     client = n.create_clob_client('0x90e9bF6c345B68eE9fd8D4ECFAddb7Ee4F14c8f4')
+    user_positions = n.fetch_user_positions(user_address, limit = 500)
     # 1. Get Active Positions
-    active_positions = n.get_active_positions(n.fetch_user_positions(user_address, limit = 500))
-
+    # active_positions = n.get_active_positions(n.fetch_user_positions(user_address, limit = 500))
+    print(len(user_positions))
     # will this skip the last active position?
-    for i in range(0, len(active_positions)):
+    for i in range(0, len(user_positions)):
         # print(f"Loop {i + 1}: Position = {active_positions.iloc[i]}")
-        trade_title = active_positions.iloc[i]['title']
-        trade_pnl = active_positions.iloc[i]['percentPnl']
-        outcome = active_positions.iloc[i]['outcome']
+        trade_title = user_positions.iloc[i]['title']
+        trade_pnl = user_positions.iloc[i]['percentPnl']
+        outcome = user_positions.iloc[i]['outcome']
 
         print(f"trade pnl is {round(trade_pnl,4)}%")
         if trade_pnl >= take_profit:
 
             print(f"take profit % of {take_profit} hit, submitting order to SELL asset: {trade_title} with outcome of [[ {outcome} ]]")
 
-            price = client.get_last_trade_price(active_positions.iloc[i]['asset'])
-            print(f"current market price is {price['price']}")
-            size = active_positions.iloc[i]['size']
+            price = client.get_last_trade_price(user_positions.iloc[i]['asset'])
+            price = float(price['price'])
+            print(f"current market price is {price}")
+            size = user_positions.iloc[i]['size']
             side = 'SELL' # this should always be sell because we'll already be in position
-            asset = active_positions.iloc[i]['asset']
+            asset = user_positions.iloc[i]['asset']
 
-            n.create_order(client, price, size, side, asset)
+            try:
+
+                n.create_order(client, price, size, side, asset)
+
+            except PolyApiException as e:
+                
+                error_message = str(e)
+
+                if "lower than the minimum" in error_message: 
+                    print("Current risk parameters do not allow you to make this trade.")
+                    # Continue to the next trade without executing
+                    continue
+
         elif trade_pnl <= stop_loss:
 
             print(f"stop loss % of {stop_loss} hit, submitting order to SELL asset: {trade_title} with outcome of [[{outcome}]]")
 
-            price = client.get_last_trade_price(active_positions.iloc[i]['asset'])
-            print(f"current market price is {price['price']}")
-            size = active_positions.iloc[i]['size']
+            price = client.get_last_trade_price(user_positions.iloc[i]['asset'])
+            price = float(price['price'])
+            print(f"current market price is {price}")
+            size = user_positions.iloc[i]['size']
             side = 'SELL' # this should always be sell because we'll already be in position
-            asset = active_positions.iloc[i]['asset']
+            asset = user_positions.iloc[i]['asset']
 
-            n.create_order(client, price, size, side, asset)
+            try:
+
+                n.create_order(client, price, size, side, asset)
+
+            except PolyApiException as e:
+                
+                error_message = str(e)
+
+                if "lower than the minimum" in error_message: 
+                    print("Current risk parameters do not allow you to make this trade.")
+                    # Continue to the next trade without executing
+                    continue
+
         else:
             print(f"neither take profit or stop loss hit for asset: {trade_title} with outcome of [[ {outcome} ]]")
             print(f"current PnL is: {round((trade_pnl), 4)}%")
@@ -65,6 +93,11 @@ def risk_management_looper(user_address: str):
     print("------------------------------------")
     print('')
 
+def run_risk_manager(user_address):
+    while True:
+        risk_management_looper(user_address)
+        time.sleep(30)
+        
 if __name__ == "__main__":
 
     while True:

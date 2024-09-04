@@ -5,11 +5,12 @@ holds all the relevant functions for working with polymarket
 import os
 import csv
 import json
+import time
 import requests
 import pandas as pd
-from web3 import Web3
 from datetime import datetime
 from dotenv import load_dotenv
+from web3 import Web3, exceptions
 from py_clob_client.client import ClobClient
 from py_clob_client.constants import POLYGON
 from py_clob_client.order_builder.constants import BUY
@@ -107,7 +108,7 @@ def get_active_positions(all_positions: pd.DataFrame) -> pd.DataFrame:
     today = datetime.now()
 
     # Filter the dataframe for active positions where 'endDate' is in the future
-    active_positions_df = all_positions[all_positions['endDate'] > today]
+    active_positions_df = all_positions[all_positions['endDate'] >= today]
 
     # Now `active_positions_df` contains only the active positions
     return active_positions_df
@@ -375,45 +376,99 @@ def connect_to_polygon() -> Web3:
 
     return web3
 
+## NOTE: OG get_wallet_balance function
+# def get_wallet_balance(user_address: str) -> float:
 
-def get_wallet_balance(user_address: str) -> float:
+#     web3 = connect_to_polygon()
 
+#     # Get the balance in Wei (the smallest unit of MATIC)
+#     balance_wei = web3.eth.get_balance(user_address)
+
+#     # Convert the balance to MATIC (1 MATIC = 1e18 Wei)
+#     balance_matic = web3.from_wei(balance_wei, 'ether')
+
+#     print(f"Balance for wallet {user_address}: {balance_matic} MATIC")
+
+#     # USDC contract address on Polygon
+#     usdc_contract_address = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
+
+#     # ABI for ERC-20 token balanceOf function
+#     erc20_abi = [
+#         {
+#             "constant": True,
+#             "inputs": [{"name": "_owner", "type": "address"}],
+#             "name": "balanceOf",
+#             "outputs": [{"name": "balance", "type": "uint256"}],
+#             "type": "function",
+#         }
+#     ]
+
+#     # Create a contract object
+#     usdc_contract = web3.eth.contract(address=usdc_contract_address, abi=erc20_abi)
+
+#     # Get the balance of USDC for the wallet
+#     balance_wei = usdc_contract.functions.balanceOf(user_address).call()
+
+#     # Convert the balance to the appropriate decimal (USDC has 6 decimals)
+#     balance_usdc = balance_wei / 10**6
+
+#     print(f"USDC Balance for wallet {user_address}: {balance_usdc} USDC")
+
+#     return balance_usdc
+
+def get_wallet_balance(user_address: str, max_retries=5, retry_delay=10) -> float:
     web3 = connect_to_polygon()
 
-    # Get the balance in Wei (the smallest unit of MATIC)
-    balance_wei = web3.eth.get_balance(user_address)
+    retries = 0
+    while retries < max_retries:
+        try:
+            # Get the balance in Wei (the smallest unit of MATIC)
+            balance_wei = web3.eth.get_balance(user_address)
 
-    # Convert the balance to MATIC (1 MATIC = 1e18 Wei)
-    balance_matic = web3.from_wei(balance_wei, 'ether')
+            # Convert the balance to MATIC (1 MATIC = 1e18 Wei)
+            balance_matic = web3.from_wei(balance_wei, 'ether')
+            print(f"Balance for wallet {user_address}: {balance_matic} MATIC")
 
-    print(f"Balance for wallet {user_address}: {balance_matic} MATIC")
+            # USDC contract address on Polygon
+            usdc_contract_address = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
 
-    # USDC contract address on Polygon
-    usdc_contract_address = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
+            # ABI for ERC-20 token balanceOf function
+            erc20_abi = [
+                {
+                    "constant": True,
+                    "inputs": [{"name": "_owner", "type": "address"}],
+                    "name": "balanceOf",
+                    "outputs": [{"name": "balance", "type": "uint256"}],
+                    "type": "function",
+                }
+            ]
 
-    # ABI for ERC-20 token balanceOf function
-    erc20_abi = [
-        {
-            "constant": True,
-            "inputs": [{"name": "_owner", "type": "address"}],
-            "name": "balanceOf",
-            "outputs": [{"name": "balance", "type": "uint256"}],
-            "type": "function",
-        }
-    ]
+            # Create a contract object
+            usdc_contract = web3.eth.contract(address=usdc_contract_address, abi=erc20_abi)
 
-    # Create a contract object
-    usdc_contract = web3.eth.contract(address=usdc_contract_address, abi=erc20_abi)
+            # Get the balance of USDC for the wallet
+            balance_wei = usdc_contract.functions.balanceOf(user_address).call()
 
-    # Get the balance of USDC for the wallet
-    balance_wei = usdc_contract.functions.balanceOf(user_address).call()
+            # Convert the balance to the appropriate decimal (USDC has 6 decimals)
+            balance_usdc = balance_wei / 10**6
+            print(f"USDC Balance for wallet {user_address}: {balance_usdc} USDC")
 
-    # Convert the balance to the appropriate decimal (USDC has 6 decimals)
-    balance_usdc = balance_wei / 10**6
+            return balance_usdc
 
-    print(f"USDC Balance for wallet {user_address}: {balance_usdc} USDC")
+        except exceptions.BadResponseFormat as e:
+            print(f"Error fetching balance: {e}")
+            print("Retrying...")
 
-    return balance_usdc
+            # Optional: Exponential backoff logic or constant delay
+            retries += 1
+            time.sleep(retry_delay)
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            # Handle other exceptions if needed
+            break
+
+    print(f"Failed to fetch balance after {max_retries} retries.")
+    return 0.0  # Return a default value or handle accordingly
 
 
 def create_clob_client(funder_address: str) -> ClobClient:

@@ -1,15 +1,3 @@
-'''
-8/23/24
-DO NOT FUCK WITH TESTING_USER_ACTIVITY. THAT IS THE WORKING COPY
-
-8/26/24
-I fucked with testing_user_activity... it still works though. 
-It IS the working copy though. For all future edits, copy this file, and work in that copy
-
-8/30/24
-This is still the working copy -- be cognisant of this
-'''
-
 import nice_funcs as n
 import requests
 import time
