@@ -286,5 +286,29 @@
         "profileImage": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Weedle_anime_f65d1378-82e1-473c-adfc-59ac7b0ff8cd_1723692010364.webp",
         "profileImageOptimized": "",
         "bot_executed": false
+    },
+    {
+        "proxyWallet": "0x2a1441dc244432d268a103fd7d4a5559813f0762",
+        "timestamp": 1725480906,
+        "conditionId": "0x1742b8774491aa5241c9ecba412320c1ea76433c8e884b8e3fa95249408d68ff",
+        "type": "REDEEM",
+        "size": 35158.6237,
+        "usdcSize": 35158.6237,
+        "transactionHash": "0x26df1d708f8a5f6ac5ecb13ae074e39a312b26f6b716336528a04747926ba95b",
+        "price": 0,
+        "asset": "",
+        "side": "",
+        "outcomeIndex": 999,
+        "title": "US Open: Muchova vs. Haddad Maia",
+        "slug": "us-open-muchova-vs-haddad-maia",
+        "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/us-open-winner-m-z6djFoYswx4c.jpg",
+        "eventSlug": "us-open-muchova-vs-haddad-maia",
+        "outcome": "",
+        "name": "weedle",
+        "pseudonym": "Cruel-Eponym",
+        "bio": "",
+        "profileImage": "https://polymarket-upload.s3.us-east-2.amazonaws.com/Weedle_anime_f65d1378-82e1-473c-adfc-59ac7b0ff8cd_1723692010364.webp",
+        "profileImageOptimized": "",
+        "bot_executed": false
     }
 ]
