@@ -1,48 +1,21 @@
-import nice_funcs as n
-import requests
+'''
+The operative script for monitoring wallets and their respective transactions. 
+All wallets are put into a separate Thread so they can run concurrently and rejoined at the end of the monitoring period.
+
+From the nice_funcs file, the brain of this script is pulled from trade_type()
+    - trade type filters out trades we dont want. Please visit nice_funcs for more details
+
+If trades pass the filtering, they are appended to a JSON file called tail_trades.json
+    - they will then be scanned by the trade_tailer for further filtering
+'''
+
 import time
-import csv
-import os
-from proxy_wallets import proxy_wallets
+import nice_funcs as n
 from threading import Thread
+from proxy_wallets import proxy_wallets
+
 
 proxy_wallets = proxy_wallets
-
-# def fetch_user_activity(user_address, limit=1, offset=0):
-#     # Define the API endpoint with parameters
-#     url = f"https://data-api.polymarket.com/activity?user={user_address}&limit={limit}&offset={offset}"
-    
-#     try:
-#         # Make the GET request to fetch the user activity data
-#         response = requests.get(url)
-        
-#         # Check if the request was successful
-#         if response.status_code == 200:
-#             # Parse the JSON data
-#             data = response.json()
-#             return data
-#         else:
-#             print(f"Request failed with status code: {response.status_code}")
-#             return None
-#     except Exception as e:
-#         print(f"An error occurred: {e}")
-#         return None
-
-# def save_trade_to_csv(trade, filename='UPDATED_new_trades.csv'):
-#     # Define the header and the row to be written
-#     header = ['proxyWallet', 'timestamp', 'conditionId', 'type', 'size', 'usdcSize', 'transactionHash', 'price', 'asset', 'side', 'outcomeIndex', 'title', 'slug', 'icon', 'eventSlug', 'outcome', 'name', 'pseudonym', 'bio', 'profileImage', 'profileImageOptimized']
-    
-#     file_exists = os.path.isfile(filename)
-    
-#     with open(filename, mode='a', newline='') as file:
-#         writer = csv.DictWriter(file, fieldnames=header)
-        
-#         # Write the header if the file does not exist
-#         if not file_exists:
-#             writer.writeheader()
-        
-#         # Write the trade data
-#         writer.writerow(trade)
 
 def monitor_wallet(user_address):
     print(f"Monitoring trades for wallet: {user_address}")

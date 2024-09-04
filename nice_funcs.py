@@ -116,14 +116,13 @@ def get_active_positions(all_positions: pd.DataFrame) -> pd.DataFrame:
 
 # return the dictionary of a user's most recent trade
 def fetch_most_recent_trade(user_address: str) -> dict:
+
     # Define the API endpoint with parameters
     url = f"https://data-api.polymarket.com/activity?user={user_address}&limit=1&offset=0"
 
     response = requests.get(url)
 
     if response.status_code == 200:
-        # NOTE: change in place
-        # data = response.json()[0]
         data = response.json()[0]
         return data
     
@@ -134,8 +133,7 @@ def fetch_most_recent_trade(user_address: str) -> dict:
 
 # prints out stats related to the most recent trade
 def get_recent_trade_stats(new_trade: dict) -> None:
-    # print(new_trade)
-    # prints out stats related to the most recent trade
+
     print("#########TRADE STATS#####################")
     print(f"TITLE: {new_trade['title']}")
     print(f"OUTCOME: {new_trade['outcome']}")
@@ -242,16 +240,17 @@ def get_open_position_stats(new_trade: dict, open_positions: pd.DataFrame) -> pd
 
 # NOTE: working --> gets a specific position size relative to total position size
 def position_over_value(user_address: str, asset: str) -> None:
+
     open_positions = fetch_user_positions(user_address)
     active_positions = get_active_positions(open_positions)
+
     active_positions_mean = active_positions['currentValue'].mean()
     active_positions_sum = active_positions['currentValue'].sum()
-    #we dont need this.. this is trading capital, not portfolio capital
-    # user_value_dict = fetch_user_value(user_address)
-    # user_value = user_value_dict['value']
+
     specific_open_position = active_positions[active_positions['asset'] == asset].copy()
     specific_open_position_value = specific_open_position['currentValue'].iloc[0]
     position_over_total_percent = specific_open_position_value / active_positions_sum
+
     print(active_positions_sum)
     print(active_positions_mean)
     print(specific_open_position_value)
@@ -376,45 +375,6 @@ def connect_to_polygon() -> Web3:
 
     return web3
 
-## NOTE: OG get_wallet_balance function
-# def get_wallet_balance(user_address: str) -> float:
-
-#     web3 = connect_to_polygon()
-
-#     # Get the balance in Wei (the smallest unit of MATIC)
-#     balance_wei = web3.eth.get_balance(user_address)
-
-#     # Convert the balance to MATIC (1 MATIC = 1e18 Wei)
-#     balance_matic = web3.from_wei(balance_wei, 'ether')
-
-#     print(f"Balance for wallet {user_address}: {balance_matic} MATIC")
-
-#     # USDC contract address on Polygon
-#     usdc_contract_address = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
-
-#     # ABI for ERC-20 token balanceOf function
-#     erc20_abi = [
-#         {
-#             "constant": True,
-#             "inputs": [{"name": "_owner", "type": "address"}],
-#             "name": "balanceOf",
-#             "outputs": [{"name": "balance", "type": "uint256"}],
-#             "type": "function",
-#         }
-#     ]
-
-#     # Create a contract object
-#     usdc_contract = web3.eth.contract(address=usdc_contract_address, abi=erc20_abi)
-
-#     # Get the balance of USDC for the wallet
-#     balance_wei = usdc_contract.functions.balanceOf(user_address).call()
-
-#     # Convert the balance to the appropriate decimal (USDC has 6 decimals)
-#     balance_usdc = balance_wei / 10**6
-
-#     print(f"USDC Balance for wallet {user_address}: {balance_usdc} USDC")
-
-#     return balance_usdc
 
 def get_wallet_balance(user_address: str, max_retries=5, retry_delay=10) -> float:
     web3 = connect_to_polygon()
@@ -508,54 +468,3 @@ def process_tail_trades():
             trade_info = json.loads(line.strip())
             # Process the trade
             print(f"Processing tail trade: {trade_info}")
-
-# NOTE: I need a 'get current price function for a specific asset
-
-
-
-# process_tail_trades()
-# wallet_address = "0x90e9bF6c345B68eE9fd8D4ECFAddb7Ee4F14c8f4"
-
-# get_wallet_balance(wallet_address)
-
-# asset = '19083349462791593334532840548890602187185739923311385087650426802477691161360'
-# user_address = '0x3cf3e8d5427aed066a7a5926980600f6c3cf87b3'
-# new_trade = fetch_most_recent_trade(user_address)
-# # print(new_trade['usdcSize'])
-# # position_over_value(user_address, asset)
-# total_positions = fetch_user_positions(user_address)
-# active_positions = get_active_positions(total_positions)
-
-
-
-# filter_trade_by_size(new_trade)
-
-
-# trade_type(new_trade, active_positions)
-
-# if is_in_position(new_trade, active_positions):
-#     print("already in position")
-#     print("NEW TRADE:")
-#     get_recent_trade_stats(new_trade)
-#     print("ACTIVE POSITION:")
-#     get_open_position_stats(new_trade, active_positions)
-# else:
-#     print('not in position')
-
-# get_recent_trade_stats(new_trade)
-
-# new_trade = fetch_most_recent_trade(user_address)
-# get_recent_trade_stats(new_trade) 
-# # print(new_trade.get('asset'))
-# open_positions = fetch_user_positions(user_address)
-# # print(open_positions)
-
-# # is_in_position(new_trade, open_positions)
-# # # print(is_in_position(new_trade, open_positions) == True)
-
-# # is_opposite_asset(new_trade, open_positions)
-
-# specific_open_position = get_open_position_stats(new_trade, open_positions)
-
-# testing_activity = fetch_user_activity(user_address, limit=1000000)
-# print(len(testing_activity))

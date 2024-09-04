@@ -1,26 +1,23 @@
 '''
-9/3/24
-Where we will monitor active positions and submit orders when our risk params are hit
+The Risk Manager handles the parameters set by the User for defining Take Profit and Stop Loss Levels
+
+Future iterations will include more complex Risk Management
+
+Some markets in Polymarket will not allow you to submit Orders for less than a Limit of 5
+    - You can either increase your Risk Parameters, or let the error handling pass over this 
+        error without breaking the loop while testing
 '''
 import time
 import nice_funcs as n
 from py_clob_client.exceptions import PolyApiException
 
 user_address = '0x90e9bF6c345B68eE9fd8D4ECFAddb7Ee4F14c8f4'
-# client = n.create_clob_client('0x90e9bF6c345B68eE9fd8D4ECFAddb7Ee4F14c8f4')
-# # 1. Get Active Positions
-# active_positions = n.get_active_positions(n.fetch_user_positions(user_address))
-# print(active_positions.iloc[0][['asset', 'title', 'percentPnl']])
-# print(active_positions.columns)
 
-# 2. Set Take Profit and Stop Loss Parameters
+# Set Take Profit and Stop Loss Parameters
 take_profit = 10
 stop_loss = -7
 
-# 3. Loop through active positions and check whether your parameters have been hit
-    # if they have, create an order
 
-# NOTE: This is counting sub $1 positions... this is fine, we shouldnt have those anyway
 def risk_management_looper(user_address: str):
 
     client = n.create_clob_client('0x90e9bF6c345B68eE9fd8D4ECFAddb7Ee4F14c8f4')

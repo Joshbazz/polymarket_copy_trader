@@ -1,7 +1,7 @@
 '''
-Can run bot this way, however console printouts wont make sense
+You can run all three bots in one terminal instance by executing this file.
 
-Additionally, you can run every script seperately in it's own dedicated terminal
+You can also run every bot separately for easier testing and logic visualization
 '''
 
 import multiprocessing

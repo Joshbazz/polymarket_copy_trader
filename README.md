@@ -1,6 +1,9 @@
 # polymarket_copy_trader
 An automated bot for tailing the trades of the top ranked wallets on Polymarket monthly
 
+- Simple Usage: enter your Polymarket Proxy Wallet Address, run main.py
+    - Note: You will need to have previously created API Keys and set allowances for your proxy wallet address
+
 # Project Setup
 
 This guide will help you set up the project environment using the provided `requirements.txt` file.
@@ -17,8 +20,8 @@ This guide will help you set up the project environment using the provided `requ
 Clone the repository to your local machine using:
 
 ```bash
-git clone <repository-url>
-cd <repository-directory>
+git clone https://github.com/Joshbazz/polymarket_copy_trader.git
+cd polymarket_copy_trader
 ```
 
 ### 2. Create a Virtual Environment

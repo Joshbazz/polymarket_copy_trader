@@ -1,3 +1,17 @@
+'''
+Script for handling further filtering of trades that are living in the tail_trades JSON
+    - During a run of process_trades, if a trade does not meet certain requirements, the 'bot_executed'
+        flag will be flipped to True, and on the next loop, the trade will be passed over
+
+    - There is also a setable parameter 'too_long_ago_hours', which will drop trades
+        that have a timestamp further out than your hours set
+
+Trades that pass filtering will be used as arguments for a create_order function which will sign
+    and trade the order out of the User's Proxy Wallet
+
+All open positions will then be monitored and handled by the Risk Manager
+'''
+
 import os
 import json
 import time
@@ -33,10 +47,6 @@ def process_trades(json_file_path, client, sleep_duration=60, too_long_ago_hours
     # Load trades from JSON file
     with open(json_file_path, 'r') as file:
         trades = json.load(file)
-
-    # NOTE: I dont think we need this anymore now that the trades are being written inside the loop
-    # # Flag to track if any trades were executed
-    # trades_updated = False
 
     # Calculate the cutoff timestamp
     cutoff_time = datetime.now() - timedelta(hours=too_long_ago_hours)
@@ -114,34 +124,6 @@ def process_trades(json_file_path, client, sleep_duration=60, too_long_ago_hours
                     with open(json_file_path, 'w') as file:
                         json.dump(trades, file, indent=4)
 
-
-            # try:
-            #     if price >= .90 or price <= 0.05:
-            #         print('not enough movement range to validate position, passing on trade')
-            #         # Update the trade status to prevent re-execution
-            #         trade['bot_executed'] = True
-                    
-            #     # NOTE: I dont know if this will work correctly, but i can fix it tomorrow
-            #     if not active_positions.empty and 'asset' in active_positions.columns:
-            #         if active_positions['asset'].eq(trade['asset']).any():
-            #             print('already in position, skipping trade') 
-            #             # Update the trade status to prevent re-execution
-            #             trade['bot_executed'] = True
-            #         else:
-            #             # Attempt to execute the trade
-            #             create_order(client, price, size, side, asset)
-
-            #             # Update the trade status to prevent re-execution
-            #             trade['bot_executed'] = True
-            #     else:
-            #         print('No active position, creating trade...')
-            #         create_order(client, price, size, side, asset)
-            #         trade['bot_executed'] = True
-            #     # trades_updated = True
-            #     # Save the immediate update back to JSON file
-            #     with open(json_file_path, 'w') as file:
-            #         json.dump(trades, file, indent=4)
-
             except PolyApiException as e:
                 
                 error_message = str(e)
@@ -177,7 +159,6 @@ def process_trades(json_file_path, client, sleep_duration=60, too_long_ago_hours
     print('----------------------------------------------------------------------')
     time.sleep(30)  # Pause before the next iteration
 
-## This is working as intended. it will tail the trade. Now we need to stop adding to a position we already have open
 
 def run_trade_tailer():
     json_file_path = '/Users/joshbazz/Desktop/Bootcamp/Capstone_Project/tail_trades.json'
@@ -188,16 +169,11 @@ def run_trade_tailer():
         
 # Example usage
 if __name__ == "__main__":
+
     # Replace with the path to your JSON file
     json_file_path = 'tail_trades.json'
     
-    # my_balance = n.get_wallet_balance('0x90e9bF6c345B68eE9fd8D4ECFAddb7Ee4F14c8f4')
-    # print(my_balance)
-    # Replace with your ClobClient instance
     client = n.create_clob_client('0x90e9bF6c345B68eE9fd8D4ECFAddb7Ee4F14c8f4')
-
-    # # Process the trades
-    # process_trades(json_file_path, client)
 
     # Run the process_trades function continuously in a loop
     while True:

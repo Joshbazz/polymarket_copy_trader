@@ -1,5 +1,13 @@
 '''
-A simple streamlit app to look at some visualizations for the trades being picked up by the wallet monitor
+A simple streamlit app to look at some visualizations for the trades being picked up by the wallet monitor.
+
+Be sure tail_trade.json (or whatever your json file is called) is contained in the same directory.
+
+In your terminal, type: 
+
+    streamlit run 'app_mod.py' 
+
+to boot up the application in your browser
 '''
 
 import pandas as pd
