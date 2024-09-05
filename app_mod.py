@@ -14,7 +14,7 @@ import pandas as pd
 import streamlit as st
 
 # Load the JSON file into a DataFrame
-df = pd.read_json('tail_trades.json')
+df = pd.read_json('example_data/example_tail_trades.json')
 
 # Convert 'timestamp' to datetime
 df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
