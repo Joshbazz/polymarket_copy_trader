@@ -25,7 +25,7 @@ def fetch_leaderboard() -> list:
     url = 'https://polymarket.com/_next/data/Qiek3ZtiJbjD_PULr6g8h/en/leaderboard.json'
 
     # Making the GET request to fetch the leaderboard data
-    response = requests.get(url)
+    response = requests.get(url, timeout=30)
 
     # Check if the request was successful
     if response.status_code == 200:
@@ -54,7 +54,7 @@ def fetch_user_value(user_address: str) -> dict[str, float]:
     url = f"https://data-api.polymarket.com/value?user={user_address}"
 
     # Make the GET request
-    response = requests.get(url)
+    response = requests.get(url, timeout=30)
 
     # Check if the request was successful
     if response.status_code == 200:
@@ -79,7 +79,7 @@ def fetch_user_positions(user_address: str, limit: int = 10000, offset: int = 0)
 
     try:
         # Make the GET request to fetch the user activity data
-        response = requests.get(url)
+        response = requests.get(url, timeout=30)
         
         # Check if the request was successful
         if response.status_code == 200:
@@ -120,7 +120,7 @@ def fetch_most_recent_trade(user_address: str) -> dict:
     # Define the API endpoint with parameters
     url = f"https://data-api.polymarket.com/activity?user={user_address}&limit=1&offset=0"
 
-    response = requests.get(url)
+    response = requests.get(url, timeout=30)
 
     if response.status_code == 200:
         data = response.json()[0]
@@ -171,7 +171,7 @@ def fetch_user_activity(user_address: str, limit: int = 20) -> list[dict]:
     
     try:
         # Make the GET request to fetch the user activity data
-        response = requests.get(url)
+        response = requests.get(url, timeout=30)
         
         # Check if the request was successful
         if response.status_code == 200:
